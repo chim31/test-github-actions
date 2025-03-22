@@ -1,6 +1,12 @@
-#include <stdio.h>
+/*
+** EPITECH PROJECT, 2025
+** main.c
+** File description:
+** function
+*/
 
-int main(void) 
+#include <stdio.h>
+int main(void)
 {
     printf("kdk");
 }
