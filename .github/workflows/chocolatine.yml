@@ -1,5 +1,4 @@
 name: chocolatine
-
 on:
   push:
     branches-ignore:
@@ -7,51 +6,45 @@ on:
   pull_request:
     branches-ignore:
       - "ga-ignore-*"
-
 env:
-  MIRROR_URL: "URL_DU_MIRROR"
-  EXECUTABLES: "chemin/vers/executable1,chemin/vers/executable2"
-
+  MIRROR_URL: "git@github.com:chim31/test-github-actions.git"
+  EXECUTABLES: "bin/my_program,bin/another_executable"
 jobs:
   check_coding_style:
     name: Vérification du coding style
     runs-on: ubuntu-latest
     container: ghcr.io/epitech/coding-style-checker:latest
-
     steps:
       - name: Cloner le dépôt
         uses: actions/checkout@v4
-
       - name: Exécuter le vérificateur de coding style
         run: check.sh $(pwd) $(pwd)
-
       - name: Analyser les erreurs
         run: |
           if [ -f coding-style-reports.log ]; then
+            cat coding-style-reports.log  # Affiche les erreurs pour le debug
             while IFS= read -r line; do
               echo "::error file=$(echo "$line" | cut -d':' -f1),line=$(echo "$line" | cut -d':' -f2),title=Coding Style Error::$line"
             done < coding-style-reports.log
             exit 1
+          else
+            echo "Aucune erreur de coding style détectée."
           fi
   check_program_compilation:
     name: "Check Program Compilation"
     runs-on: ubuntu-latest
     needs: check_coding_style
     container: epitechcontent/epitest-docker
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
+      - name: Clean Previous Builds
+        run: make fclean
       - name: Compile the Project
-        run: |
-          make
+        run: make
         timeout-minutes: 2
-
       - name: Clean the Project
-        run: |
-          make clean
-
+        run: make clean
       - name: Verify Executables
         run: |
           IFS=',' read -ra EXEC_FILES <<< "$EXECUTABLES"
@@ -59,6 +52,8 @@ jobs:
             if [[ ! -x "$file" ]]; then
               echo "::error file=$file::Executable not found or not executable"
               exit 1
+            else
+              echo "✅ $file est bien un exécutable."
             fi
           done
   run_tests:
@@ -66,28 +61,28 @@ jobs:
     runs-on: ubuntu-latest
     needs: check_program_compilation
     container: epitechcontent/epitest-docker
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
       - name: Run Project Tests
         run: |
-          make tests_run
+          if make tests_run; then
+            echo "✅ Tous les tests sont passés."
+          else
+            echo "::error title=Tests échoués::Un ou plusieurs tests ont échoué."
+            exit 1
+          fi
         timeout-minutes: 2
   push_to_mirror:
     name: "Push to Mirror"
     runs-on: ubuntu-latest
     needs: run_tests
     if: github.event_name == 'push'
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
       - name: Mirror Repository
         uses: pixta-dev/repository-mirroring-action@v1
         with:
           target_repo_url: ${{ env.MIRROR_URL }}
           ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-
