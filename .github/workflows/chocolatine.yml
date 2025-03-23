@@ -8,7 +8,7 @@ on:
       - "ga-ignore-*"
 env:
   MIRROR_URL: "git@github.com:chim31/test-github-actions.git"
-  EXECUTABLES: "asm"
+  EXECUTABLES: "mysh"
 jobs:
   check_coding_style:
     name: Vérification du coding style
