@@ -6,8 +6,8 @@
 */
 
 #include "my.h"
-int test(void)
+int main(void)
 {
-    printf("le\n");
+    test();
     return 0;
 }

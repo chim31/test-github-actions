@@ -8,7 +8,7 @@ on:
       - "ga-ignore-*"
 env:
   MIRROR_URL: "git@github.com:chim31/test-github-actions.git"
-  EXECUTABLES: "bin/my_program,bin/another_executable"
+  EXECUTABLES: "asm"
 jobs:
   check_coding_style:
     name: Vérification du coding style
@@ -21,14 +21,14 @@ jobs:
         run: check.sh $(pwd) $(pwd)
       - name: Analyser les erreurs
         run: |
-          if [ -f coding-style-reports.log ]; then
-            cat coding-style-reports.log  # Affiche les erreurs pour le debug
+          if [ -f coding-style-reports.log ] && [ -s coding-style-reports.log ]; then
+            cat coding-style-reports.log
             while IFS= read -r line; do
               echo "::error file=$(echo "$line" | cut -d':' -f1),line=$(echo "$line" | cut -d':' -f2),title=Coding Style Error::$line"
             done < coding-style-reports.log
             exit 1
           else
-            echo "Aucune erreur de coding style détectée."
+            echo "Aucune erreur de coding style détectée ou aucun fichier C trouvé."
           fi
   check_program_compilation:
     name: "Check Program Compilation"
@@ -47,15 +47,17 @@ jobs:
         run: make clean
       - name: Verify Executables
         run: |
-          IFS=',' read -ra EXEC_FILES <<< "$EXECUTABLES"
+          bash -c '
+          IFS="," read -ra EXEC_FILES <<< "$(echo "$EXECUTABLES" | tr "," "\n")"
           for file in "${EXEC_FILES[@]}"; do
             if [[ ! -x "$file" ]]; then
               echo "::error file=$file::Executable not found or not executable"
               exit 1
             else
-              echo "✅ $file est bien un exécutable."
+              echo "$file est bien un exécutable."
             fi
           done
+          '
   run_tests:
     name: "Run Tests"
     runs-on: ubuntu-latest
@@ -67,7 +69,7 @@ jobs:
       - name: Run Project Tests
         run: |
           if make tests_run; then
-            echo "✅ Tous les tests sont passés."
+            echo "Tous les tests sont passés."
           else
             echo "::error title=Tests échoués::Un ou plusieurs tests ont échoué."
             exit 1
