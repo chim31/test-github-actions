@@ -5,7 +5,7 @@
 ## make
 ##
 
-NAME		=	asm
+NAME		=	mysh
 SRC		=	$(wildcard *.c)
 SRC_NO_MAIN     =       $(filter-out main.c, $(SRC))
 OBJ		=	$(SRC:.c=.o)
